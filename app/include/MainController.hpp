@@ -47,9 +47,7 @@ class MainController final : public engine::core::Controller {
 
     void create_plane();
     void draw_plane();
-    void destroy_plane();
 
-    unsigned m_vbo_plane{0};
     unsigned m_vao_plane{0};
     bool m_cursor_enable{true};
 
@@ -80,10 +78,9 @@ class MainController final : public engine::core::Controller {
     void draw_tree();
     void draw_cabin();
     void draw_rifle();
-    void draw_target();
     void draw_skybox();
 
-    unsigned m_chrosshair_vao{};
+    unsigned m_vao_crosshair{};
     void set_crosshair();
     void draw_crosshair();
 };

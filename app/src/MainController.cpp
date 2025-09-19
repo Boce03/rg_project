@@ -2,14 +2,12 @@
 // Created by boce on 7/26/25.
 //
 
-#include "../../engine/libs/glad/include/glad/glad.h"
 #include "engine/graphics/GraphicsController.hpp"
 #include "engine/graphics/OpenGL.hpp"
 #include "engine/platform/PlatformController.hpp"
 #include "engine/resources/ResourcesController.hpp"
 
 #include <MainController.hpp>
-#include <complex>
 #include <spdlog/spdlog.h>
 
 namespace app {
@@ -179,9 +177,7 @@ void MainController::draw() {
     draw_instanced_tree();
     draw_plane();
     draw_cabin();
-    //draw_target();
     draw_targets();
-
     draw_rifle();
     draw_skybox();
     draw_crosshair();
@@ -190,10 +186,7 @@ void MainController::draw() {
 void MainController::end_draw() { engine::core::Controller::get<engine::platform::PlatformController>()->swap_buffers(); }
 
 
-void MainController::terminate() {
-    destroy_plane();
-    delete m_model_tree;
-}
+void MainController::terminate() { delete m_model_tree; }
 
 
 void MainController::set_targets() {
@@ -222,6 +215,7 @@ void MainController::check_boundingbox_intersects() {
 }
 
 void MainController::create_plane() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
     float vertices[] = {
             -5.0f, -0.5f, -5.0f, 0.0f, 1.0f, 0.0f, 0.0f, 5.0f,
             -5.0f, -0.5f, 5.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
@@ -232,35 +226,13 @@ void MainController::create_plane() {
             -5.0f, -0.5f, -5.0f, 0.0f, 1.0f, 0.0f, 0.0f, 5.0f
     };
 
-    CHECKED_GL_CALL(glGenBuffers, 1, &m_vbo_plane);
-    CHECKED_GL_CALL(glGenVertexArrays, 1, &m_vao_plane);
-
-    CHECKED_GL_CALL(glBindVertexArray, m_vao_plane);
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, m_vbo_plane);
-
-    CHECKED_GL_CALL(glGenBuffers, 1, &m_vbo_plane);
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, m_vbo_plane);
-    CHECKED_GL_CALL(glBufferData, GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    CHECKED_GL_CALL(glVertexAttribPointer, 0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
-    CHECKED_GL_CALL(glEnableVertexAttribArray, 0);
-
-    CHECKED_GL_CALL(glVertexAttribPointer, 1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
-    CHECKED_GL_CALL(glEnableVertexAttribArray, 1);
-
-    CHECKED_GL_CALL(glVertexAttribPointer, 2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
-    CHECKED_GL_CALL(glEnableVertexAttribArray, 2);
-
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-    CHECKED_GL_CALL(glBindVertexArray, 0);
+    m_vao_plane = graphics->set_plane(vertices, sizeof(vertices));
 }
 
 void MainController::draw_plane() {
     auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
     auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("plane");
     auto texture = engine::core::Controller::get<engine::resources::ResourcesController>()->texture("ground");
-
-    texture->bind(GL_TEXTURE0);
 
     shader->use();
     shader->set_mat4("projection", graphics->projection_matrix());
@@ -272,16 +244,7 @@ void MainController::draw_plane() {
     m_dirlight.apply(shader, "dirlight");
     m_spotlight.apply(shader, "spotlight");
 
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, m_vbo_plane);
-    CHECKED_GL_CALL(glBindVertexArray, m_vao_plane);
-    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLES, 0, 6);
-    CHECKED_GL_CALL(glBindVertexArray, 0);
-    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
-}
-
-void MainController::destroy_plane() {
-    CHECKED_GL_CALL(glDeleteBuffers, 1, &m_vbo_plane);
-    CHECKED_GL_CALL(glDeleteVertexArrays, 1, &m_vao_plane);
+    graphics->draw_plane(m_vao_plane, shader, texture);
 }
 
 void MainController::draw_tree() {
@@ -358,37 +321,9 @@ void MainController::draw_rifle() {
 
     shader->set_vec3("viewPos", graphics->camera()->Position);
 
-    glDepthRange(0.0, 0.01);
+    engine::graphics::OpenGL::set_depth_range(0.0, 0.01);
     rifle->draw(shader);
-    glDepthRange(0.0, 1.0);
-}
-
-void MainController::draw_target() {
-    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
-    auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("target");
-    auto target = engine::core::Controller::get<engine::resources::ResourcesController>()->model("target");
-
-    shader->use();
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-0.2f, -0.5f, 0.3f));
-    model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.11f, 0.11f, 0.11f));
-
-    shader->set_mat4("model", model);
-    shader->set_mat4("view", graphics->camera()->view_matrix());
-    shader->set_mat4("projection", graphics->projection_matrix());
-    shader->set_float("shininess", 32.0f);
-
-    glm::mat3 normal_matrix = glm::mat3(glm::transpose(glm::inverse(model)));
-    shader->set_mat3("invNormal", normal_matrix);
-
-    m_dirlight.apply(shader, "dirlight");
-    m_spotlight.apply(shader, "spotlight");
-
-    shader->set_vec3("viewPos", graphics->camera()->Position);
-
-    target->draw(shader);
+    engine::graphics::OpenGL::set_depth_range(0.0, 1.0);
 }
 
 void MainController::draw_skybox() {
@@ -467,6 +402,7 @@ void MainController::draw_instanced_tree() {
 }
 
 void MainController::set_crosshair() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
     float vertices[] = {
             -1.0f, -1.0f, 0.0f,
             1.0f, -1.0f, 0.0f,
@@ -477,23 +413,12 @@ void MainController::set_crosshair() {
             -1.0f, -1.0f, 0.0f
     };
 
-    unsigned vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glGenVertexArrays(1, &m_chrosshair_vao);
-    glBindVertexArray(m_chrosshair_vao);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    m_vao_crosshair = graphics->set_crosshair(vertices, sizeof(vertices));
 }
 
 
 void MainController::draw_crosshair() {
+    auto graphics = engine::core::Controller::get<engine::graphics::GraphicsController>();
     auto shader = engine::core::Controller::get<engine::resources::ResourcesController>()->shader("crosshair");
     shader->use();
 
@@ -503,11 +428,7 @@ void MainController::draw_crosshair() {
     shader->set_vec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
 
     engine::graphics::OpenGL::disable_depth_testing();
-
-    glBindVertexArray(m_chrosshair_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
+    graphics->draw_crosshair(shader, m_vao_crosshair);
     engine::graphics::OpenGL::enable_depth_testing();
 }
 

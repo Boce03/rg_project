@@ -2,7 +2,7 @@
 // Created by boce on 9/14/25.
 //
 
-#include "../include/Target.hpp"
+#include <Target.hpp>
 
 #include "engine/core/App.hpp"
 #include "engine/core/Controller.hpp"
