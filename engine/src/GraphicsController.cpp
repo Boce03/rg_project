@@ -98,5 +98,62 @@ void GraphicsController::instanced_draw(resources::Model *model, const resources
     model->instanced_draw(shader, amount);
 }
 
+unsigned int GraphicsController::set_plane(float *vertices, size_t length) {
+    unsigned int vbo, vao;
+    CHECKED_GL_CALL(glGenBuffers, 1, &vbo);
+    CHECKED_GL_CALL(glGenVertexArrays, 1, &vao);
+    CHECKED_GL_CALL(glBindVertexArray, vao);
+    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vbo);
+    CHECKED_GL_CALL(glBufferData, GL_ARRAY_BUFFER, length, vertices, GL_STATIC_DRAW);
+
+    CHECKED_GL_CALL(glVertexAttribPointer, 0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+    CHECKED_GL_CALL(glEnableVertexAttribArray, 0);
+
+    CHECKED_GL_CALL(glVertexAttribPointer, 1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
+    CHECKED_GL_CALL(glEnableVertexAttribArray, 1);
+
+    CHECKED_GL_CALL(glVertexAttribPointer, 2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
+    CHECKED_GL_CALL(glEnableVertexAttribArray, 2);
+
+    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+
+    return vao;
+}
+
+void GraphicsController::draw_plane(unsigned int vao, const resources::Shader *shader, resources::Texture *texture) {
+    shader->use();
+    texture->bind(GL_TEXTURE0);
+
+    CHECKED_GL_CALL(glBindVertexArray, vao);
+    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLES, 0, 6);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+}
+
+unsigned int GraphicsController::set_crosshair(float *vertices, size_t length) {
+    unsigned int vbo, vao;
+    CHECKED_GL_CALL(glGenBuffers, 1, &vbo);
+    CHECKED_GL_CALL(glGenVertexArrays, 1, &vao);
+    CHECKED_GL_CALL(glBindVertexArray, vao);
+    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, vbo);
+    CHECKED_GL_CALL(glBufferData, GL_ARRAY_BUFFER, length, vertices, GL_STATIC_DRAW);
+
+    CHECKED_GL_CALL(glVertexAttribPointer, 0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+    CHECKED_GL_CALL(glEnableVertexAttribArray, 0);
+
+    CHECKED_GL_CALL(glBindBuffer, GL_ARRAY_BUFFER, 0);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+
+    return vao;
+}
+
+void GraphicsController::draw_crosshair(const resources::Shader *shader, unsigned int vao) {
+    shader->use();
+
+    CHECKED_GL_CALL(glBindVertexArray, vao);
+    CHECKED_GL_CALL(glDrawArrays, GL_TRIANGLES, 0, 6);
+    CHECKED_GL_CALL(glBindVertexArray, 0);
+}
+
 
 }

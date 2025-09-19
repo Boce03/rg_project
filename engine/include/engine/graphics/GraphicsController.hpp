@@ -16,6 +16,7 @@ namespace engine::resources {
 class Skybox;
 class Model;
 class Shader;
+class Texture;
 }
 
 namespace engine::graphics {
@@ -87,6 +88,14 @@ public:
     void draw_skybox(const resources::Shader *shader, const resources::Skybox *skybox);
 
     void instanced_draw(resources::Model *model, const resources::Shader *shader, glm::mat4 *model_matrix, int amount);
+
+    unsigned int set_plane(float *vertices, size_t length);
+
+    void draw_plane(unsigned int vao, const resources::Shader *shader, resources::Texture *texture);
+
+    unsigned int set_crosshair(float *vertices, size_t length);
+
+    void draw_crosshair(const resources::Shader *shader, unsigned int vao);
 
     Camera *camera() { return &m_camera; }
 
