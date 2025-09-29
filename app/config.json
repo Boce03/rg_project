@@ -1,11 +1,27 @@
 {
   "resources": {
     "models": {
+      "tree": {
+        "path": "tree/tree.obj",
+        "flip_uvs": true
+      },
+      "cabin1": {
+        "path": "cabin1/cabin.obj",
+        "flip_uvs": true
+      },
+      "ak_47": {
+        "path": "ak_47/ak47.obj",
+        "flip_uvs": true
+      },
+      "target": {
+        "path": "target/target.obj",
+        "flip_uvs": true
+      }
     }
   },
   "window": {
-    "height": 600,
-    "title": "Hello, window!",
-    "width": 800
+    "height": 1024,
+    "title": "Shooting range",
+    "width": 1400
   }
 }
